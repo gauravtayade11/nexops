@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nexops
+  namespace: nexops
+  labels:
+    app.kubernetes.io/name: nexops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nexops-cluster-role
+  labels:
+    app.kubernetes.io/name: nexops
+rules:
+  # Core resources
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - pods/exec
+      - services
+      - endpoints
+      - configmaps
+      - secrets
+      - persistentvolumeclaims
+      - namespaces
+      - nodes
+      - events
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Apps resources
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - deployments/scale
+      - statefulsets
+      - statefulsets/scale
+      - daemonsets
+      - replicasets
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Batch resources
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Networking resources
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+      - networkpolicies
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Autoscaling resources
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Metrics
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - nodes
+      - pods
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nexops-cluster-role-binding
+  labels:
+    app.kubernetes.io/name: nexops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nexops-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: nexops
+    namespace: nexops

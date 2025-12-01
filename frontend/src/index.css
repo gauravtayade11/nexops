@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #213547;
+  background-color: #f8fafc;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium;
+  }
+
+  .btn-danger {
+    @apply bg-danger-500 text-white px-4 py-2 rounded-lg hover:bg-danger-600 transition-colors font-medium;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+
+  .status-healthy {
+    @apply bg-success-50 text-success-600 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-warning {
+    @apply bg-warning-50 text-warning-600 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-danger {
+    @apply bg-danger-50 text-danger-600 px-2 py-1 rounded-full text-xs font-medium;
+  }
+}

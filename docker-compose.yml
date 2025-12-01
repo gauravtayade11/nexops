@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexops-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - K8S_IN_CLUSTER=false
+      - K8S_CONFIG_PATH=/root/.kube/config
+    volumes:
+      - ~/.kube:/root/.kube:ro  # Mount kubeconfig for local development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nexops-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    name: nexops-network

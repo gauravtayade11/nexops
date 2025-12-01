@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexops
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/part-of: nexops
