@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { kubernetesApi } from '../../services/api';
+import { useTerminal } from '../../contexts/TerminalContext';
 import {
   CommandLineIcon,
   TrashIcon,
@@ -10,14 +11,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 type TerminalMode = 'kubectl' | 'shell';
-
-interface HistoryEntry {
-  type: 'input' | 'output' | 'error' | 'info';
-  content: string;
-  timestamp: Date;
-  executionTime?: number;
-  workingDirectory?: string;
-}
 
 const KUBECTL_QUICK_COMMANDS = [
   { label: 'Get Pods', command: 'get pods -A' },
@@ -50,23 +43,17 @@ const SHELL_QUICK_COMMANDS = [
 ];
 
 export default function KubectlTerminal() {
-  const [mode, setMode] = useState<TerminalMode>('kubectl');
+  const {
+    state: { mode, history, commandHistory, workingDirectory },
+    setMode,
+    addHistoryEntry,
+    addCommandToHistory,
+    setWorkingDirectory,
+    clearHistory,
+  } = useTerminal();
+
   const [command, setCommand] = useState('');
-  const [workingDirectory, setWorkingDirectory] = useState('~');
-  const [history, setHistory] = useState<HistoryEntry[]>([
-    {
-      type: 'info',
-      content: 'Welcome to NexOps Terminal. Use the toggle to switch between kubectl and shell modes.',
-      timestamp: new Date(),
-    },
-    {
-      type: 'info',
-      content: 'Type "help" for available commands.',
-      timestamp: new Date(),
-    },
-  ]);
   const [executing, setExecuting] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +76,7 @@ export default function KubectlTerminal() {
 
     // Handle clear command
     if (trimmedCmd === 'clear') {
-      setHistory([]);
+      clearHistory();
       setCommand('');
       return;
     }
@@ -122,15 +109,16 @@ Note: Some dangerous commands are blocked for security.`
 
 Note: Some dangerous commands are blocked for security.`;
 
-      setHistory(prev => [...prev, {
+      addHistoryEntry({
         type: 'input',
         content: mode === 'kubectl' ? `$ kubectl ${trimmedCmd}` : `$ ${trimmedCmd}`,
         timestamp: new Date(),
-      }, {
+      });
+      addHistoryEntry({
         type: 'info',
         content: helpContent,
         timestamp: new Date(),
-      }]);
+      });
       setCommand('');
       return;
     }
@@ -139,28 +127,29 @@ Note: Some dangerous commands are blocked for security.`;
     if (mode === 'shell' && trimmedCmd.startsWith('cd ')) {
       const newDir = trimmedCmd.substring(3).trim();
       setWorkingDirectory(newDir || '~');
-      setHistory(prev => [...prev, {
+      addHistoryEntry({
         type: 'input',
         content: `$ ${trimmedCmd}`,
         timestamp: new Date(),
-      }, {
+      });
+      addHistoryEntry({
         type: 'info',
         content: `Changed directory to: ${newDir || '~'}`,
         timestamp: new Date(),
-      }]);
+      });
       setCommand('');
       return;
     }
 
     // Add to history display
-    setHistory(prev => [...prev, {
+    addHistoryEntry({
       type: 'input',
       content: mode === 'kubectl' ? `$ kubectl ${trimmedCmd}` : `$ ${trimmedCmd}`,
       timestamp: new Date(),
-    }]);
+    });
 
     // Add to command history for navigation
-    setCommandHistory(prev => [...prev, trimmedCmd]);
+    addCommandToHistory(trimmedCmd);
     setHistoryIndex(-1);
     setCommand('');
     setExecuting(true);
@@ -174,27 +163,27 @@ Note: Some dangerous commands are blocked for security.`;
 
         if (response.data.success) {
           if (response.data.stdout) {
-            setHistory(prev => [...prev, {
+            addHistoryEntry({
               type: 'output',
               content: response.data.stdout,
               timestamp: new Date(),
               executionTime: response.data.execution_time,
-            }]);
+            });
           } else {
-            setHistory(prev => [...prev, {
+            addHistoryEntry({
               type: 'info',
               content: 'Command executed successfully (no output)',
               timestamp: new Date(),
               executionTime: response.data.execution_time,
-            }]);
+            });
           }
         } else {
-          setHistory(prev => [...prev, {
+          addHistoryEntry({
             type: 'error',
             content: response.data.stderr || 'Command failed',
             timestamp: new Date(),
             executionTime: response.data.execution_time,
-          }]);
+          });
         }
       } else {
         // Shell mode
@@ -211,37 +200,37 @@ Note: Some dangerous commands are blocked for security.`;
 
         if (response.data.success) {
           if (response.data.stdout) {
-            setHistory(prev => [...prev, {
+            addHistoryEntry({
               type: 'output',
               content: response.data.stdout,
               timestamp: new Date(),
               executionTime: response.data.execution_time,
               workingDirectory: response.data.working_directory,
-            }]);
+            });
           } else {
-            setHistory(prev => [...prev, {
+            addHistoryEntry({
               type: 'info',
               content: 'Command executed successfully (no output)',
               timestamp: new Date(),
               executionTime: response.data.execution_time,
-            }]);
+            });
           }
         } else {
-          setHistory(prev => [...prev, {
+          addHistoryEntry({
             type: 'error',
             content: response.data.stderr || 'Command failed',
             timestamp: new Date(),
             executionTime: response.data.execution_time,
-          }]);
+          });
         }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute command';
-      setHistory(prev => [...prev, {
+      addHistoryEntry({
         type: 'error',
         content: `Error: ${errorMessage}`,
         timestamp: new Date(),
-      }]);
+      });
     } finally {
       setExecuting(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -270,16 +259,12 @@ Note: Some dangerous commands are blocked for security.`;
       }
     } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
-      setHistory([]);
+      clearHistory();
     }
   };
 
-  const clearTerminal = () => {
-    setHistory([{
-      type: 'info',
-      content: 'Terminal cleared',
-      timestamp: new Date(),
-    }]);
+  const handleClearTerminal = () => {
+    clearHistory();
   };
 
   const runQuickCommand = (cmd: string) => {
@@ -289,11 +274,11 @@ Note: Some dangerous commands are blocked for security.`;
 
   const toggleMode = (newMode: TerminalMode) => {
     setMode(newMode);
-    setHistory(prev => [...prev, {
+    addHistoryEntry({
       type: 'info',
       content: `Switched to ${newMode === 'kubectl' ? 'Kubectl' : 'Shell'} mode`,
       timestamp: new Date(),
-    }]);
+    });
   };
 
   const quickCommands = mode === 'kubectl' ? KUBECTL_QUICK_COMMANDS : SHELL_QUICK_COMMANDS;
@@ -303,8 +288,8 @@ Note: Some dangerous commands are blocked for security.`;
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Terminal</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Terminal</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {mode === 'kubectl'
               ? 'Execute kubectl commands against your cluster'
               : 'Execute shell commands on the backend server'}
@@ -312,13 +297,13 @@ Note: Some dangerous commands are blocked for security.`;
         </div>
         <div className="flex items-center gap-3">
           {/* Mode Toggle */}
-          <div className="bg-gray-100 rounded-lg p-1 flex">
+          <div className="bg-gray-100 dark:bg-slate-700 rounded-lg p-1 flex">
             <button
               onClick={() => toggleMode('kubectl')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 mode === 'kubectl'
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-slate-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               <div className="flex items-center gap-1.5">
@@ -330,8 +315,8 @@ Note: Some dangerous commands are blocked for security.`;
               onClick={() => toggleMode('shell')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 mode === 'shell'
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-slate-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               <div className="flex items-center gap-1.5">
@@ -341,8 +326,8 @@ Note: Some dangerous commands are blocked for security.`;
             </button>
           </div>
           <button
-            onClick={clearTerminal}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={handleClearTerminal}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
             <TrashIcon className="h-4 w-4" />
             Clear
@@ -351,8 +336,8 @@ Note: Some dangerous commands are blocked for security.`;
       </div>
 
       {/* Quick Commands */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
           Quick Commands ({mode === 'kubectl' ? 'Kubectl' : 'Shell'})
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -361,7 +346,7 @@ Note: Some dangerous commands are blocked for security.`;
               key={qc.command}
               onClick={() => runQuickCommand(qc.command)}
               disabled={executing}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50"
             >
               {qc.label}
             </button>
@@ -471,28 +456,28 @@ Note: Some dangerous commands are blocked for security.`;
       {/* Help Section */}
       <div className={`border rounded-xl p-4 ${
         mode === 'kubectl'
-          ? 'bg-yellow-50 border-yellow-100'
-          : 'bg-blue-50 border-blue-100'
+          ? 'bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30'
+          : 'bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30'
       }`}>
         <h3 className={`text-sm font-medium mb-2 ${
-          mode === 'kubectl' ? 'text-yellow-800' : 'text-blue-800'
+          mode === 'kubectl' ? 'text-warning-800 dark:text-warning-300' : 'text-primary-800 dark:text-primary-300'
         }`}>
           Tips & Shortcuts
         </h3>
         <ul className={`text-sm space-y-1 ${
-          mode === 'kubectl' ? 'text-yellow-700' : 'text-blue-700'
+          mode === 'kubectl' ? 'text-warning-700 dark:text-warning-400' : 'text-primary-700 dark:text-primary-400'
         }`}>
           <li>- Press <kbd className={`px-1.5 py-0.5 rounded text-xs font-mono ${
-            mode === 'kubectl' ? 'bg-yellow-100' : 'bg-blue-100'
+            mode === 'kubectl' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-500/20'
           }`}>Enter</kbd> to execute command</li>
           <li>- Press <kbd className={`px-1.5 py-0.5 rounded text-xs font-mono ${
-            mode === 'kubectl' ? 'bg-yellow-100' : 'bg-blue-100'
+            mode === 'kubectl' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-500/20'
           }`}>Up/Down</kbd> arrows to navigate command history</li>
           <li>- Press <kbd className={`px-1.5 py-0.5 rounded text-xs font-mono ${
-            mode === 'kubectl' ? 'bg-yellow-100' : 'bg-blue-100'
+            mode === 'kubectl' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-500/20'
           }`}>Ctrl+L</kbd> to clear terminal</li>
           <li>- Type <code className={`px-1.5 py-0.5 rounded text-xs font-mono ${
-            mode === 'kubectl' ? 'bg-yellow-100' : 'bg-blue-100'
+            mode === 'kubectl' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-500/20'
           }`}>help</code> for available commands</li>
           {mode === 'kubectl' ? (
             <li>- Commands like delete --all, drain, etc. are blocked for safety</li>

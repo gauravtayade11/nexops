@@ -467,3 +467,250 @@ export interface ShellResponse {
   execution_time: number;
   working_directory: string;
 }
+
+// Cluster types
+export type ClusterStatus = 'connected' | 'disconnected' | 'error' | 'unknown';
+
+export interface ClusterInfo {
+  id: string;
+  name: string;
+  context?: string;
+  status: ClusterStatus;
+  is_active: boolean;
+  is_default: boolean;
+  version?: string;
+  platform?: string;
+  node_count: number;
+  namespace_count: number;
+}
+
+export interface ClusterListResponse {
+  clusters: ClusterInfo[];
+  active_cluster_id?: string;
+  total: number;
+}
+
+export interface ClusterHealthInfo {
+  cluster_id: string;
+  healthy: boolean;
+  status: ClusterStatus;
+  node_count: number;
+  ready_nodes: number;
+  total_pods: number;
+  running_pods: number;
+  namespaces: number;
+  warnings: string[];
+  error?: string;
+  checked_at: string;
+}
+
+// Auth types
+export type UserRole = 'viewer' | 'operator' | 'developer' | 'admin';
+
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  full_name?: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+  last_login?: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  user_id: string;
+  username: string;
+  action: string;
+  resource_type: string;
+  resource_name?: string;
+  namespace?: string;
+  details?: string;
+  ip_address?: string;
+  timestamp: string;
+}
+
+// Helm types
+export type HelmReleaseStatus = 'deployed' | 'failed' | 'pending-install' | 'pending-upgrade' | 'pending-rollback' | 'uninstalling' | 'superseded' | 'unknown';
+
+export interface HelmRelease {
+  name: string;
+  namespace: string;
+  revision: number;
+  status: HelmReleaseStatus;
+  chart: string;
+  chart_version: string;
+  app_version?: string;
+  updated?: string;
+  description?: string;
+}
+
+export interface HelmReleaseHistory {
+  revision: number;
+  status: HelmReleaseStatus;
+  chart: string;
+  chart_version: string;
+  app_version?: string;
+  updated: string;
+  description?: string;
+}
+
+export interface HelmReleaseValues {
+  user_supplied: Record<string, unknown>;
+  computed: Record<string, unknown>;
+}
+
+export interface HelmRepository {
+  name: string;
+  url: string;
+  is_default?: boolean;
+}
+
+export interface HelmChartInfo {
+  name: string;
+  version: string;
+  app_version?: string;
+  description?: string;
+  repository?: string;
+  icon?: string;
+  home?: string;
+  sources: string[];
+  keywords: string[];
+  maintainers: Array<{ name?: string; email?: string; url?: string }>;
+}
+
+export interface HelmChartSearchResult {
+  name: string;
+  version: string;
+  app_version?: string;
+  description?: string;
+  repository: string;
+}
+
+export interface HelmInstallRequest {
+  release_name: string;
+  chart: string;
+  namespace?: string;
+  version?: string;
+  values?: Record<string, unknown>;
+  create_namespace?: boolean;
+  wait?: boolean;
+  timeout?: number;
+  dry_run?: boolean;
+  repository?: string;
+}
+
+export interface HelmUpgradeRequest {
+  chart?: string;
+  version?: string;
+  values?: Record<string, unknown>;
+  reset_values?: boolean;
+  reuse_values?: boolean;
+  wait?: boolean;
+  timeout?: number;
+  dry_run?: boolean;
+  force?: boolean;
+  repository?: string;
+}
+
+export interface HelmOperationResult {
+  success: boolean;
+  message: string;
+  release?: HelmRelease;
+  manifest?: string;
+  notes?: string;
+}
+
+export interface HelmReleaseListResponse {
+  releases: HelmRelease[];
+  total: number;
+}
+
+export interface HelmRepositoryListResponse {
+  repositories: HelmRepository[];
+}
+
+// Cost types
+export interface CostBreakdown {
+  cpu: number;
+  memory: number;
+  storage: number;
+  network: number;
+  gpu: number;
+  total: number;
+}
+
+export interface NamespaceCost {
+  namespace: string;
+  costs: CostBreakdown;
+  pod_count: number;
+  deployment_count: number;
+  percentage_of_total: number;
+}
+
+export interface PodCost {
+  name: string;
+  namespace: string;
+  costs: CostBreakdown;
+  cpu_request: string;
+  cpu_limit: string;
+  memory_request: string;
+  memory_limit: string;
+  age: string;
+  owner_kind?: string;
+  owner_name?: string;
+}
+
+export interface CostTrend {
+  timestamp: string;
+  costs: CostBreakdown;
+}
+
+export interface CostRecommendation {
+  id: string;
+  type: string;
+  severity: string;
+  title: string;
+  description: string;
+  resource_type: string;
+  resource_name: string;
+  namespace: string;
+  current_cost: number;
+  estimated_savings: number;
+  percentage_savings: number;
+  action: string;
+}
+
+export interface ResourceEfficiency {
+  name: string;
+  namespace: string;
+  resource_type: string;
+  requested: number;
+  used: number;
+  limit: number;
+  efficiency_percentage: number;
+  waste_cost: number;
+}
+
+export interface CostDashboardResponse {
+  summary: {
+    total_cost: CostBreakdown;
+    cost_by_namespace: NamespaceCost[];
+    cost_trend: CostTrend[];
+    recommendations: CostRecommendation[];
+    top_costly_pods: PodCost[];
+  };
+  namespace_breakdown: NamespaceCost[];
+  recommendations: CostRecommendation[];
+  efficiency_metrics: ResourceEfficiency[];
+  total_monthly_estimate: number;
+  total_annual_estimate: number;
+}

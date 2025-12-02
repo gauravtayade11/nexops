@@ -20,19 +20,19 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon: Icon, trend, status = 'healthy' }: StatCardProps) {
   const statusColors = {
-    healthy: 'text-success-500 bg-success-50',
-    warning: 'text-warning-500 bg-warning-50',
-    danger: 'text-danger-500 bg-danger-50',
+    healthy: 'text-success-500 bg-success-50 dark:bg-success-500/20',
+    warning: 'text-warning-500 bg-warning-50 dark:bg-warning-500/20',
+    danger: 'text-danger-500 bg-danger-50 dark:bg-danger-500/20',
   };
 
   return (
     <div className="card">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
           {trend && (
-            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
               <ArrowTrendingUpIcon className="h-3 w-3" />
               {trend}
             </p>
@@ -82,7 +82,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Operations Dashboard</h1>
         <div className="flex gap-3">
           <Link to="/incidents" className="btn-primary">
             View All Incidents
@@ -123,15 +123,15 @@ export default function Dashboard() {
         {/* Open Incidents */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Open Incidents</h2>
-            <Link to="/incidents" className="text-sm text-primary-600 hover:text-primary-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Open Incidents</h2>
+            <Link to="/incidents" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
               View all
             </Link>
           </div>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</div>
           ) : incidents.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <CheckCircleIcon className="h-12 w-12 mx-auto mb-2 text-success-500" />
               No open incidents
             </div>
@@ -141,22 +141,22 @@ export default function Dashboard() {
                 <Link
                   key={incident.id}
                   to={`/incidents/${incident.id}`}
-                  className="block p-3 rounded-lg border border-gray-100 hover:border-primary-200 hover:bg-primary-50/50 transition-colors"
+                  className="block p-3 rounded-lg border border-gray-100 dark:border-slate-600 hover:border-primary-200 dark:hover:border-primary-700 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">{incident.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{incident.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {incident.namespace || 'No namespace'} • {incident.affected_services.length} services
                       </p>
                     </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         incident.severity === 'critical'
-                          ? 'bg-danger-50 text-danger-600'
+                          ? 'bg-danger-50 dark:bg-danger-500/20 text-danger-600 dark:text-danger-400'
                           : incident.severity === 'high'
-                          ? 'bg-warning-50 text-warning-600'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-warning-50 dark:bg-warning-500/20 text-warning-600 dark:text-warning-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                       }`}
                     >
                       {incident.severity}
@@ -171,36 +171,36 @@ export default function Dashboard() {
         {/* Recent Timeline Events */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Changes</h2>
-            <Link to="/timeline" className="text-sm text-primary-600 hover:text-primary-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Changes</h2>
+            <Link to="/timeline" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
               View timeline
             </Link>
           </div>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</div>
           ) : recentEvents.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No recent events</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">No recent events</div>
           ) : (
             <div className="space-y-3">
               {recentEvents.slice(0, 5).map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-gray-100"
+                  className="flex items-start gap-3 p-3 rounded-lg border border-gray-100 dark:border-slate-600"
                 >
                   <div
                     className={`p-2 rounded-lg ${
                       event.event_type === 'deployment'
-                        ? 'bg-primary-50 text-primary-600'
+                        ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
                         : event.event_type === 'incident'
-                        ? 'bg-danger-50 text-danger-600'
-                        : 'bg-gray-100 text-gray-600'
+                        ? 'bg-danger-50 dark:bg-danger-500/20 text-danger-600 dark:text-danger-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                     }`}
                   >
                     <ClockIcon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{event.title}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{event.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {event.source} • {new Date(event.event_timestamp).toLocaleTimeString()}
                     </p>
                   </div>
@@ -213,11 +213,11 @@ export default function Dashboard() {
 
       {/* Cluster Warnings */}
       {clusterHealth?.warnings && clusterHealth.warnings.length > 0 && (
-        <div className="card bg-warning-50 border-warning-200">
-          <h2 className="text-lg font-semibold text-warning-800 mb-3">Cluster Warnings</h2>
+        <div className="card bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30">
+          <h2 className="text-lg font-semibold text-warning-800 dark:text-warning-400 mb-3">Cluster Warnings</h2>
           <ul className="space-y-2">
             {clusterHealth.warnings.map((warning, index) => (
-              <li key={index} className="flex items-center gap-2 text-warning-700">
+              <li key={index} className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
                 <ExclamationTriangleIcon className="h-5 w-5" />
                 {warning}
               </li>

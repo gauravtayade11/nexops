@@ -78,6 +78,15 @@ async def list_events(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/pods/{namespace}/{pod_name}/events", response_model=List[K8sEvent])
+async def get_pod_events(namespace: str, pod_name: str):
+    """Get events for a specific pod."""
+    try:
+        return await kubernetes_service.get_pod_events(namespace, pod_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/scale")
 async def scale_deployment(request: ScaleRequest):
     """Scale a deployment to the specified number of replicas."""
@@ -393,5 +402,37 @@ async def execute_shell(request: ShellRequest):
             timeout=request.timeout,
             working_directory=request.working_directory
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Deployment rollback endpoints
+@router.get("/deployments/{namespace}/{deployment_name}/revisions")
+async def get_deployment_revisions(namespace: str, deployment_name: str):
+    """Get rollout history/revisions of a deployment."""
+    try:
+        return await kubernetes_service.get_deployment_revisions(namespace, deployment_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/deployments/{namespace}/{deployment_name}/rollback")
+async def rollback_deployment_to_revision(
+    namespace: str,
+    deployment_name: str,
+    revision: int = Query(..., ge=0, description="Target revision number to rollback to")
+):
+    """Rollback a deployment to a specific revision."""
+    try:
+        result = await kubernetes_service.rollback_deployment_to_revision(
+            namespace=namespace,
+            deployment_name=deployment_name,
+            revision=revision
+        )
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result.get("error", "Rollback failed"))
+        return result
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -17,7 +17,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-        isReady ? 'bg-success-50 text-success-700' : 'bg-danger-50 text-danger-700'
+        isReady ? 'bg-success-50 dark:bg-success-500/20 text-success-700 dark:text-success-400' : 'bg-danger-50 dark:bg-danger-500/20 text-danger-700 dark:text-danger-400'
       }`}
     >
       {isReady ? (
@@ -38,17 +38,17 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gray-100 rounded-lg">
-            <ServerIcon className="h-6 w-6 text-gray-600" />
+          <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-lg">
+            <ServerIcon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{node.name}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{node.name}</h3>
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={node.status} />
               {node.roles.map((role) => (
                 <span
                   key={role}
-                  className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs"
+                  className="px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs"
                 >
                   {role}
                 </span>
@@ -58,47 +58,47 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-2 hover:bg-gray-100 rounded-lg"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
         >
           {expanded ? (
-            <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+            <ChevronUpIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           ) : (
-            <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+            <ChevronDownIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           )}
         </button>
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
         <div>
-          <p className="text-xs text-gray-500">Internal IP</p>
-          <p className="font-medium text-gray-900">{node.internal_ip || '-'}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Internal IP</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{node.internal_ip || '-'}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Version</p>
-          <p className="font-medium text-gray-900">{node.version}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Version</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{node.version}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Age</p>
-          <p className="font-medium text-gray-900">{node.age}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Age</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{node.age}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Container Runtime</p>
-          <p className="font-medium text-gray-900 truncate">{node.container_runtime}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Container Runtime</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{node.container_runtime}</p>
         </div>
       </div>
 
       {/* Metrics */}
       {metrics && (
-        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <CpuChipIcon className="h-5 w-5 text-primary-500" />
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">CPU</span>
-                <span className="font-medium">{metrics.cpu_percent}%</span>
+                <span className="text-gray-600 dark:text-gray-400">CPU</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{metrics.cpu_percent}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
                     metrics.cpu_percent >= 90
@@ -116,10 +116,10 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
             <CircleStackIcon className="h-5 w-5 text-success-500" />
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">Memory</span>
-                <span className="font-medium">{metrics.memory_percent}%</span>
+                <span className="text-gray-600 dark:text-gray-400">Memory</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{metrics.memory_percent}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
                     metrics.memory_percent >= 90
@@ -138,74 +138,74 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
 
       {/* Expanded details */}
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 space-y-4">
           {/* Capacity */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Capacity</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Capacity</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-gray-500">CPU</p>
-                <p className="font-medium text-gray-900">{node.capacity.cpu}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">CPU</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{node.capacity.cpu}</p>
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-gray-500">Memory</p>
-                <p className="font-medium text-gray-900">{node.capacity.memory}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">Memory</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{node.capacity.memory}</p>
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-gray-500">Pods</p>
-                <p className="font-medium text-gray-900">{node.capacity.pods}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">Pods</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{node.capacity.pods}</p>
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-gray-500">Storage</p>
-                <p className="font-medium text-gray-900">{node.capacity.storage || '-'}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">Storage</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{node.capacity.storage || '-'}</p>
               </div>
             </div>
           </div>
 
           {/* System Info */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">System Info</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">System Info</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-500">OS Image</span>
-                <span className="text-gray-900">{node.os_image}</span>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-700">
+                <span className="text-gray-500 dark:text-gray-400">OS Image</span>
+                <span className="text-gray-900 dark:text-gray-100">{node.os_image}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-500">Kernel Version</span>
-                <span className="text-gray-900">{node.kernel_version}</span>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-700">
+                <span className="text-gray-500 dark:text-gray-400">Kernel Version</span>
+                <span className="text-gray-900 dark:text-gray-100">{node.kernel_version}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-500">External IP</span>
-                <span className="text-gray-900">{node.external_ip || 'None'}</span>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-700">
+                <span className="text-gray-500 dark:text-gray-400">External IP</span>
+                <span className="text-gray-900 dark:text-gray-100">{node.external_ip || 'None'}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-500">Container Runtime</span>
-                <span className="text-gray-900">{node.container_runtime}</span>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-700">
+                <span className="text-gray-500 dark:text-gray-400">Container Runtime</span>
+                <span className="text-gray-900 dark:text-gray-100">{node.container_runtime}</span>
               </div>
             </div>
           </div>
 
           {/* Conditions */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Conditions</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Conditions</h4>
             <div className="space-y-2">
               {node.conditions.map((condition) => (
                 <div
                   key={condition.type}
                   className={`p-3 rounded-lg text-sm ${
                     condition.status === 'True' && condition.type !== 'Ready'
-                      ? 'bg-warning-50 border border-warning-200'
+                      ? 'bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30'
                       : condition.status === 'True'
-                      ? 'bg-success-50 border border-success-200'
-                      : 'bg-gray-50 border border-gray-200'
+                      ? 'bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30'
+                      : 'bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600'
                   }`}
                 >
                   <div className="flex justify-between">
-                    <span className="font-medium">{condition.type}</span>
-                    <span>{condition.status}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{condition.type}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{condition.status}</span>
                   </div>
                   {condition.message && (
-                    <p className="text-gray-600 mt-1 text-xs">{condition.message}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs">{condition.message}</p>
                   )}
                 </div>
               ))}
@@ -215,12 +215,12 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
           {/* Taints */}
           {node.taints.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Taints</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Taints</h4>
               <div className="flex flex-wrap gap-2">
                 {node.taints.map((taint, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-1 bg-warning-50 text-warning-700 rounded text-xs"
+                    className="px-2 py-1 bg-warning-50 dark:bg-warning-500/20 text-warning-700 dark:text-warning-400 rounded text-xs"
                   >
                     {taint.key}={taint.value}:{taint.effect}
                   </span>
@@ -231,12 +231,12 @@ function NodeCard({ node, metrics }: { node: NodeInfo; metrics?: NodeMetrics }) 
 
           {/* Labels */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Labels</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Labels</h4>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {Object.entries(node.labels).map(([key, value]) => (
                 <span
                   key={key}
-                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                  className="px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded text-xs"
                 >
                   {key}={value}
                 </span>
@@ -286,8 +286,8 @@ export default function NodesView() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Nodes</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             {readyNodes}/{nodes.length} nodes ready
           </p>
         </div>
@@ -300,14 +300,14 @@ export default function NodesView() {
       {/* Nodes list */}
       {loading && nodes.length === 0 ? (
         <div className="card text-center py-12">
-          <ArrowPathIcon className="h-8 w-8 text-gray-400 mx-auto animate-spin" />
-          <p className="text-gray-500 mt-2">Loading nodes...</p>
+          <ArrowPathIcon className="h-8 w-8 text-gray-400 dark:text-gray-500 mx-auto animate-spin" />
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Loading nodes...</p>
         </div>
       ) : nodes.length === 0 ? (
         <div className="card text-center py-12">
-          <ServerIcon className="h-12 w-12 text-gray-300 mx-auto" />
-          <h3 className="text-lg font-medium text-gray-900 mt-4">No Nodes Found</h3>
-          <p className="text-gray-500 mt-2">Unable to connect to the Kubernetes cluster.</p>
+          <ServerIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mt-4">No Nodes Found</h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Unable to connect to the Kubernetes cluster.</p>
         </div>
       ) : (
         <div className="space-y-4">

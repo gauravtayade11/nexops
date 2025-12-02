@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-12-02
+
+### Added
+- **Dark Mode** - Complete dark theme support across all components
+  - System preference detection via `prefers-color-scheme`
+  - Manual toggle in header
+  - Persistent preference storage in localStorage
+  - ThemeContext for global theme state management
+- **Terminal State Persistence** - Terminal history preserved across navigation
+  - Command history maintained in React Context (TerminalContext)
+  - Mode (kubectl/shell) and working directory remembered
+  - Output history preserved when switching views
+  - No more losing terminal state when navigating away
+- **Pod Events in Log Viewer** - View Kubernetes events for non-running pods
+  - Helpful for debugging Pending/Failed pods
+  - Events displayed with timestamps and repeat counts
+  - New API endpoint: `GET /api/v1/kubernetes/pods/{namespace}/{pod}/events`
+- **Multi-Cluster Support** - Manage multiple Kubernetes clusters from a single dashboard
+  - Cluster switcher in the header
+  - Cluster-specific context management
+  - Unified view across clusters
+- **RBAC Integration** - Role-based access control for user permissions
+  - User authentication and authorization
+  - Role-based views and actions
+  - Audit logging for user actions
+- **Helm Chart Deployment UI** - Deploy and manage Helm charts visually
+  - Browse available charts
+  - Configure values before deployment
+  - Upgrade and rollback releases
+- **Cost Analysis Dashboard** - Monitor and optimize cluster costs
+  - Resource cost breakdown by namespace
+  - Cost trends and forecasting
+  - Optimization recommendations
+
+### Improved
+- **Pod Log Viewer** - Graceful handling of non-running pods
+  - Informative status messages based on pod state (Pending, Failed, Unknown)
+  - "Try Fetching Logs Anyway" option for edge cases
+  - Status badge in header shows current pod state
+- **Dark Mode UI** - All Kubernetes views fully themed
+  - Resources view with dark tables and cards
+  - Nodes view
+  - Cluster Metrics
+  - YAML Deploy with dark editor
+  - Terminal with dark theme
+
 ## [1.1.0] - 2024-12-01
 
 ### Added
@@ -81,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.2.0 | 2024-12-02 | Dark Mode, Terminal Persistence, Multi-Cluster, RBAC, Helm UI, Cost Dashboard |
 | 1.1.0 | 2024-12-01 | WebSocket Real-Time Log Streaming |
 | 1.0.0 | 2024-12-01 | Initial Release |
 

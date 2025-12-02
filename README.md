@@ -14,7 +14,7 @@
 
 **A modern, comprehensive Kubernetes management dashboard for DevOps teams.**
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#contributing)
+[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Changelog](#changelog) • [Contributing](#contributing)
 
 ---
 
@@ -30,6 +30,7 @@ NexOps is a powerful DevOps Operations Center that provides real-time visibility
 - **Real-time Cluster Health** - Live overview of pods, nodes, and namespace statistics
 - **Resource Metrics** - CPU and memory utilization across nodes and pods
 - **Event Timeline** - Track cluster events and anomalies
+- **Dark Mode Support** - Full dark/light theme with system preference detection
 
 ### Workload Management
 - **Pods** - View status, logs, and execute commands
@@ -46,13 +47,26 @@ NexOps is a powerful DevOps Operations Center that provides real-time visibility
 ### Interactive Terminals
 - **kubectl Terminal** - Execute kubectl commands directly in the browser
 - **Shell Terminal** - Full bash access with kubectl and helm pre-installed
+- **Terminal State Persistence** - Command history and output preserved across navigation
 - **Pod Exec** - Run commands inside containers
-- **Log Viewer** - Real-time streaming with filters
+- **Log Viewer** - Real-time streaming with WebSocket support, search filters, and download
+- **Pod Events** - View Kubernetes events for pending/failed pods directly in log viewer
 
 ### DevOps Features
 - **YAML Deploy** - Apply manifests with dry-run validation
+- **Helm Chart UI** - Deploy, upgrade, and rollback Helm releases visually
 - **AI Analysis** - Intelligent incident insights (Gemini/Claude)
 - **GitFlow Integration** - Branch and release management
+
+### Multi-Cluster & Security
+- **Multi-Cluster Support** - Manage multiple Kubernetes clusters from one dashboard
+- **RBAC Integration** - Role-based access control for user permissions
+- **Audit Logging** - Track user actions across the platform
+
+### Cost Management
+- **Cost Analysis Dashboard** - Monitor and optimize cluster costs
+- **Resource Cost Breakdown** - View costs by namespace and workload
+- **Cost Forecasting** - Predict future costs based on trends
 
 ## Quick Start
 
@@ -170,6 +184,7 @@ NexOps/
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/kubernetes/pods/{ns}/{pod}/logs` | GET | Stream pod logs |
+| `/api/v1/kubernetes/pods/{ns}/{pod}/events` | GET | Get pod events |
 | `/api/v1/kubernetes/pods/{ns}/{pod}/exec` | POST | Execute in container |
 
 ### Kubernetes Deployment
@@ -215,6 +230,12 @@ git clone https://github.com/gauravtayade11/nexops.git
 cd NexOps
 make dev
 ```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+
+---
 
 ## License
 

@@ -235,6 +235,41 @@ class KubernetesService:
             logger.error(f"Error listing events: {e}")
             raise
 
+    async def get_pod_events(self, namespace: str, pod_name: str) -> List[K8sEvent]:
+        """Get events for a specific pod."""
+        self._initialize()
+        try:
+            # Use field selector to filter events for this specific pod
+            field_selector = f"involvedObject.name={pod_name},involvedObject.kind=Pod"
+            events = self._core_v1.list_namespaced_event(
+                namespace,
+                field_selector=field_selector
+            )
+
+            result = []
+            for event in events.items:
+                result.append(K8sEvent(
+                    name=event.metadata.name,
+                    namespace=event.metadata.namespace,
+                    type=event.type or "Normal",
+                    reason=event.reason or "",
+                    message=event.message or "",
+                    count=event.count or 1,
+                    first_timestamp=event.first_timestamp,
+                    last_timestamp=event.last_timestamp,
+                    involved_object={
+                        "kind": event.involved_object.kind,
+                        "name": event.involved_object.name,
+                        "namespace": event.involved_object.namespace or ""
+                    }
+                ))
+            # Sort by last_timestamp descending (most recent first)
+            result.sort(key=lambda x: x.last_timestamp or x.first_timestamp or datetime.min, reverse=True)
+            return result
+        except ApiException as e:
+            logger.error(f"Error listing pod events: {e}")
+            raise
+
     async def scale_deployment(self, namespace: str, deployment_name: str, replicas: int) -> Dict[str, Any]:
         self._initialize()
         try:
@@ -1409,6 +1444,136 @@ class KubernetesService:
             if e.status == 404:
                 return None
             raise
+
+    async def get_deployment_revisions(self, namespace: str, deployment_name: str) -> List[Dict[str, Any]]:
+        """Get rollout history of a deployment by listing its ReplicaSets."""
+        self._initialize()
+        try:
+            # Get the deployment to find the revision annotation
+            deployment = self._apps_v1.read_namespaced_deployment(deployment_name, namespace)
+            deployment_uid = deployment.metadata.uid
+
+            # List all ReplicaSets in the namespace
+            replica_sets = self._apps_v1.list_namespaced_replica_set(namespace)
+
+            revisions = []
+            for rs in replica_sets.items:
+                # Check if this RS belongs to our deployment
+                owner_refs = rs.metadata.owner_references or []
+                is_owned = any(
+                    ref.kind == "Deployment" and ref.uid == deployment_uid
+                    for ref in owner_refs
+                )
+
+                if is_owned:
+                    annotations = rs.metadata.annotations or {}
+                    revision = annotations.get("deployment.kubernetes.io/revision", "0")
+
+                    # Get image from the pod template
+                    image = None
+                    if rs.spec.template.spec.containers:
+                        image = rs.spec.template.spec.containers[0].image
+
+                    # Get change cause annotation
+                    change_cause = annotations.get("kubernetes.io/change-cause", "")
+
+                    revisions.append({
+                        "revision": int(revision),
+                        "name": rs.metadata.name,
+                        "replicas": rs.status.replicas or 0,
+                        "ready_replicas": rs.status.ready_replicas or 0,
+                        "image": image,
+                        "change_cause": change_cause,
+                        "created_at": rs.metadata.creation_timestamp.isoformat() if rs.metadata.creation_timestamp else None,
+                        "age": self._calculate_age(rs.metadata.creation_timestamp)
+                    })
+
+            # Sort by revision number descending
+            revisions.sort(key=lambda x: x["revision"], reverse=True)
+            return revisions
+
+        except ApiException as e:
+            logger.error(f"Error getting deployment revisions: {e}")
+            raise
+
+    async def rollback_deployment_to_revision(
+        self,
+        namespace: str,
+        deployment_name: str,
+        revision: int
+    ) -> Dict[str, Any]:
+        """Rollback a deployment to a specific revision using kubectl."""
+        import subprocess
+        import time
+
+        self._initialize()
+
+        start_time = time.time()
+
+        try:
+            # Build the kubectl rollback command
+            kubectl_cmd = ["kubectl"]
+            if settings.K8S_CONFIG_PATH:
+                config_path = os.path.expanduser(settings.K8S_CONFIG_PATH)
+                kubectl_cmd.extend(["--kubeconfig", config_path])
+
+            kubectl_cmd.extend([
+                "rollout", "undo",
+                f"deployment/{deployment_name}",
+                f"--to-revision={revision}",
+                "-n", namespace
+            ])
+
+            # Execute the rollback
+            result = subprocess.run(
+                kubectl_cmd,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            execution_time = time.time() - start_time
+
+            if result.returncode == 0:
+                return {
+                    "success": True,
+                    "message": f"Rollback initiated for {deployment_name} to revision {revision}",
+                    "deployment": deployment_name,
+                    "namespace": namespace,
+                    "target_revision": revision,
+                    "output": result.stdout.strip(),
+                    "execution_time": round(execution_time, 3)
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"Rollback failed: {result.stderr.strip()}",
+                    "deployment": deployment_name,
+                    "namespace": namespace,
+                    "target_revision": revision,
+                    "error": result.stderr.strip(),
+                    "execution_time": round(execution_time, 3)
+                }
+
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "message": "Rollback command timed out",
+                "deployment": deployment_name,
+                "namespace": namespace,
+                "target_revision": revision,
+                "error": "Command timed out after 60 seconds"
+            }
+        except Exception as e:
+            logger.error(f"Error rolling back deployment: {e}")
+            return {
+                "success": False,
+                "message": f"Rollback failed: {str(e)}",
+                "deployment": deployment_name,
+                "namespace": namespace,
+                "target_revision": revision,
+                "error": str(e)
+            }
 
 
 kubernetes_service = KubernetesService()
