@@ -4,21 +4,46 @@
 
 ### DevOps Operations Center
 
+[![CI](https://github.com/gauravtayade11/nexops/actions/workflows/ci.yml/badge.svg)](https://github.com/gauravtayade11/nexops/actions/workflows/ci.yml)
+[![Security](https://github.com/gauravtayade11/nexops/actions/workflows/security.yml/badge.svg)](https://github.com/gauravtayade11/nexops/actions/workflows/security.yml)
+[![CodeQL](https://github.com/gauravtayade11/nexops/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/gauravtayade11/nexops/security/code-scanning)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/gauravtayade11/nexops/releases)
+[![GitHub stars](https://img.shields.io/github/stars/gauravtayade11/nexops?style=social)](https://github.com/gauravtayade11/nexops/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/gauravtayade11/nexops?style=social)](https://github.com/gauravtayade11/nexops/network/members)
+
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://reactjs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5.svg)](https://kubernetes.io/)
+[![Helm](https://img.shields.io/badge/Helm-Chart-0F1689.svg)](https://helm.sh/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/gauravtayade11/nexops/pulls)
 
 **A modern, comprehensive Kubernetes management dashboard for DevOps teams.**
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Changelog](#changelog) • [Contributing](#contributing)
+[Features](#features) • [Demo](#demo) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Helm](#helm-installation) • [Contributing](#contributing)
 
 ---
 
 </div>
+
+## Demo
+
+<div align="center">
+
+<!-- Replace with your actual demo GIF/video -->
+![NexOps Dashboard Demo](docs/images/demo.gif)
+
+*Security Posture Dashboard with AI-powered remediation*
+
+</div>
+
+> **Note:** To add your own demo:
+> 1. Record your screen using tools like [LICEcap](https://www.cockos.com/licecap/) or [Kap](https://getkap.co/)
+> 2. Save as `docs/images/demo.gif`
+> 3. Recommended: Keep under 5MB, 800x600px, 15-30 seconds
 
 ## Overview
 
@@ -78,6 +103,29 @@ NexOps is a powerful DevOps Operations Center that provides real-time visibility
   - Optimization recommendations
   - Resource efficiency metrics
   - Top cost consumers identification
+
+### Security Posture Dashboard
+- **Security Score & Grade** - Overall cluster security assessment (A-F grading)
+- **Security Findings** - Real-time detection of misconfigurations
+  - Privileged containers detection
+  - Root user containers
+  - Host path mounts
+  - Missing security contexts
+- **RBAC Analysis** - Role-based access control security assessment
+  - Service account risk analysis
+  - Cluster-admin binding detection
+  - Wildcard permission identification
+- **Network Policy Coverage** - Network security posture
+  - Namespace protection status
+  - Pod coverage percentage
+- **Image Vulnerability Scanning** - Container security with Trivy
+  - CVE detection with severity levels
+  - CVSS scores and fix versions
+- **AI-Powered Remediation** - Google Gemini integration
+  - Detailed risk assessments
+  - Step-by-step remediation commands
+  - YAML configuration examples
+  - Best practices and prevention tips
 
 ## Quick Start
 
@@ -213,6 +261,41 @@ make k8s-status
 # Port forward for access
 kubectl port-forward -n nexops svc/nexops-frontend 3000:80
 ```
+
+### Helm Installation
+
+Deploy NexOps to your Kubernetes cluster using Helm:
+
+```bash
+# Add the repository (when published)
+# helm repo add nexops https://gauravtayade11.github.io/nexops/charts
+
+# Install from local chart
+helm install nexops ./charts/nexops -n nexops --create-namespace
+
+# Install with custom values
+helm install nexops ./charts/nexops -n nexops --create-namespace \
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=nexops.example.com
+
+# Upgrade existing installation
+helm upgrade nexops ./charts/nexops -n nexops
+
+# Uninstall
+helm uninstall nexops -n nexops
+```
+
+**Configuration options:**
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `backend.replicaCount` | Backend replicas | `1` |
+| `frontend.replicaCount` | Frontend replicas | `1` |
+| `ingress.enabled` | Enable ingress | `false` |
+| `ingress.hosts[0].host` | Ingress hostname | `nexops.local` |
+| `backend.extraEnv` | Extra env vars (secrets) | `[]` |
+
+See [charts/nexops/values.yaml](charts/nexops/values.yaml) for all options.
 
 ## Security
 

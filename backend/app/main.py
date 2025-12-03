@@ -1,9 +1,24 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes import (
+    auth,
+    clusters,
+    cost,
+    gitflow,
+    health,
+    helm,
+    incidents,
+    jenkins,
+    kubernetes,
+    security,
+    selfservice,
+    timeline,
+    websocket,
+)
 from app.core.config import settings
-from app.api.routes import kubernetes, jenkins, incidents, timeline, selfservice, health, gitflow, websocket, clusters, auth, helm, cost
 
 
 @asynccontextmanager
@@ -44,6 +59,7 @@ app.include_router(clusters.router, prefix=f"{settings.API_PREFIX}/clusters", ta
 app.include_router(auth.router, prefix=f"{settings.API_PREFIX}/auth", tags=["Authentication"])
 app.include_router(helm.router, prefix=f"{settings.API_PREFIX}", tags=["Helm"])
 app.include_router(cost.router, prefix=f"{settings.API_PREFIX}", tags=["Cost"])
+app.include_router(security.router, prefix=f"{settings.API_PREFIX}", tags=["Security"])
 
 
 @app.get("/")

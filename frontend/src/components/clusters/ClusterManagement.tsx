@@ -11,7 +11,7 @@ import {
 import { clustersApi } from '../../services/api';
 import { useCluster } from '../../contexts/ClusterContext';
 import { useAuth } from '../../contexts/AuthContext';
-import type { ClusterInfo } from '../../types';
+// ClusterInfo type imported from context
 
 interface KubeContext {
   name: string;
@@ -21,7 +21,7 @@ interface KubeContext {
 }
 
 export default function ClusterManagement() {
-  const { clusters, activeCluster, setActiveCluster, refreshClusters } = useCluster();
+  const { clusters, setActiveCluster, refreshClusters } = useCluster();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [contexts, setContexts] = useState<KubeContext[]>([]);

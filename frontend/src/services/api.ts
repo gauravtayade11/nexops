@@ -16,7 +16,7 @@ import type {
   ClusterInfo, ClusterListResponse, ClusterHealthInfo,
   User, LoginResponse,
   HelmRelease, HelmReleaseHistory, HelmReleaseValues,
-  HelmRepository, HelmChartInfo, HelmChartSearchResult,
+  HelmChartInfo, HelmChartSearchResult,
   HelmInstallRequest, HelmUpgradeRequest, HelmOperationResult,
   HelmReleaseListResponse, HelmRepositoryListResponse,
   CostDashboardResponse, NamespaceCost, PodCost, CostTrend, CostRecommendation, ResourceEfficiency

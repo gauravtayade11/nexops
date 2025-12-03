@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import { costApi } from '../../services/api';
-import type {
-  CostDashboardResponse,
-  NamespaceCost,
-  CostRecommendation,
-  CostTrend,
-} from '../../types';
+import type { CostDashboardResponse, CostBreakdown } from '../../types';
 import {
   CurrencyDollarIcon,
   ArrowPathIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
   LightBulbIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
@@ -43,7 +37,7 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
-function CostBreakdownBar({ costs, total }: { costs: Record<string, number>; total: number }) {
+function CostBreakdownBar({ costs, total }: { costs: CostBreakdown; total: number }) {
   const colors: Record<string, string> = {
     cpu: 'bg-blue-500',
     memory: 'bg-green-500',
