@@ -1,4 +1,5 @@
 """AI Chat API routes for NexOps AI assistant with real-time data from all sections."""
+
 import logging
 from typing import Optional
 
@@ -54,25 +55,19 @@ QUERY_KEYWORDS = {
     "k8s_events": ["k8s event", "kubernetes event", "cluster event"],
     "k8s_health": ["cluster health", "cluster status", "kubernetes health"],
     "resources": ["resources", "cpu", "memory", "usage", "metrics", "utilization"],
-
     # Security
     "security": ["security", "secure", "vulnerability", "vulnerabilities", "cve", "scan"],
     "rbac": ["rbac", "role", "rolebinding", "permission", "access control", "service account"],
     "network_policy": ["network policy", "network policies", "ingress policy", "egress policy"],
     "compliance": ["compliance", "cis", "benchmark", "audit"],
-
     # Jenkins / CI-CD
     "jenkins": ["jenkins", "build", "builds", "pipeline", "pipelines", "ci", "cd", "cicd", "ci/cd", "job", "jobs"],
-
     # Helm
     "helm": ["helm", "chart", "charts", "release", "releases", "helm install", "helm upgrade"],
-
     # Cost
     "cost": ["cost", "costs", "spending", "expensive", "billing", "price", "budget", "savings"],
-
     # Timeline / Events
     "timeline": ["timeline", "history", "activity", "recent events", "what happened"],
-
     # Incidents
     "incidents": ["incident", "incidents", "outage", "issue", "problem", "alert", "alerts"],
 }
@@ -103,7 +98,8 @@ async def fetch_context(query_types: list) -> str:
         if "k8s_health" in query_types or not query_types:
             try:
                 health = await kubernetes_service.get_cluster_health()
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Kubernetes Cluster Health
 - **Status**: {"Healthy" if health.healthy else "Unhealthy"}
 - **Nodes**: {health.ready_nodes}/{health.node_count} ready
@@ -111,7 +107,8 @@ async def fetch_context(query_types: list) -> str:
 - **Running Pods**: {health.running_pods}
 - **Namespaces**: {health.namespaces}
 - **Warnings**: {', '.join(health.warnings) if health.warnings else 'None'}
-""")
+"""
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch cluster health: {e}")
 
@@ -132,7 +129,8 @@ async def fetch_context(query_types: list) -> str:
                     if pod.status.value == "Running":
                         ns_counts[ns]["running"] += 1
 
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Pod Summary
 - **Total Pods**: {len(pods)}
 - **Running**: {running}
@@ -141,8 +139,14 @@ async def fetch_context(query_types: list) -> str:
 - **Succeeded/Completed**: {succeeded}
 
 ### Pods by Namespace (Top 10):
-""" + "\n".join([f"- **{ns}**: {counts['running']}/{counts['total']} running"
-                 for ns, counts in sorted(ns_counts.items(), key=lambda x: x[1]['total'], reverse=True)[:10]]))
+"""
+                    + "\n".join(
+                        [
+                            f"- **{ns}**: {counts['running']}/{counts['total']} running"
+                            for ns, counts in sorted(ns_counts.items(), key=lambda x: x[1]["total"], reverse=True)[:10]
+                        ]
+                    )
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch pods: {e}")
 
@@ -152,15 +156,26 @@ async def fetch_context(query_types: list) -> str:
                 healthy = sum(1 for d in deployments if d.ready_replicas == d.replicas and d.replicas > 0)
                 unhealthy = [d for d in deployments if d.ready_replicas != d.replicas]
 
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Deployment Summary
 - **Total Deployments**: {len(deployments)}
 - **Healthy**: {healthy}
 - **Unhealthy/Scaling**: {len(unhealthy)}
 
 ### Deployments Needing Attention:
-""" + ("\n".join([f"- **{d.namespace}/{d.name}**: {d.ready_replicas}/{d.replicas} ready"
-                  for d in unhealthy[:5]]) if unhealthy else "All deployments are healthy!"))
+"""
+                    + (
+                        "\n".join(
+                            [
+                                f"- **{d.namespace}/{d.name}**: {d.ready_replicas}/{d.replicas} ready"
+                                for d in unhealthy[:5]
+                            ]
+                        )
+                        if unhealthy
+                        else "All deployments are healthy!"
+                    )
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch deployments: {e}")
 
@@ -172,11 +187,13 @@ async def fetch_context(query_types: list) -> str:
                     svc_type = svc.type or "ClusterIP"
                     svc_types[svc_type] = svc_types.get(svc_type, 0) + 1
 
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Service Summary
 - **Total Services**: {len(services)}
 - **By Type**: {', '.join([f'{t}: {c}' for t, c in svc_types.items()])}
-""")
+"""
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch services: {e}")
 
@@ -185,26 +202,32 @@ async def fetch_context(query_types: list) -> str:
                 nodes = await kubernetes_service.get_nodes()
                 ready = sum(1 for n in nodes if n.status == "Ready")
 
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Node Summary
 - **Total Nodes**: {len(nodes)}
 - **Ready**: {ready}
 - **Not Ready**: {len(nodes) - ready}
 
 ### Node Details:
-""" + "\n".join([f"- **{n.name}**: {n.status}, Roles: {', '.join(n.roles)}, K8s: {n.version}"
-                 for n in nodes]))
+"""
+                    + "\n".join(
+                        [f"- **{n.name}**: {n.status}, Roles: {', '.join(n.roles)}, K8s: {n.version}" for n in nodes]
+                    )
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch nodes: {e}")
 
         if "namespaces" in query_types:
             try:
                 namespaces = await kubernetes_service.get_namespaces()
-                context_parts.append(f"""
+                context_parts.append(
+                    f"""
 ## Namespace Summary
 - **Total Namespaces**: {len(namespaces)}
 - **Namespaces**: {', '.join([ns.name for ns in namespaces])}
-""")
+"""
+                )
             except Exception as e:
                 logger.warning(f"Could not fetch namespaces: {e}")
 
@@ -212,11 +235,13 @@ async def fetch_context(query_types: list) -> str:
             try:
                 metrics = await kubernetes_service.get_cluster_metrics()
                 if metrics:
-                    context_parts.append(f"""
+                    context_parts.append(
+                        f"""
 ## Cluster Resource Usage
 - **CPU**: {metrics.total_cpu_usage} / {metrics.total_cpu_capacity} ({metrics.cpu_percent}%)
 - **Memory**: {metrics.total_memory_usage} / {metrics.total_memory_capacity} ({metrics.memory_percent}%)
-""")
+"""
+                    )
             except Exception as e:
                 logger.warning(f"Could not fetch metrics: {e}")
 
@@ -231,7 +256,8 @@ async def fetch_context(query_types: list) -> str:
             if "security" in query_types:
                 try:
                     dashboard = await security_service.get_security_dashboard()
-                    context_parts.append(f"""
+                    context_parts.append(
+                        f"""
 ## Security Dashboard
 - **Security Score**: {dashboard.security_score.score}/100 (Grade: {dashboard.security_score.grade})
 - **Critical Issues**: {dashboard.security_score.critical_issues}
@@ -243,14 +269,17 @@ async def fetch_context(query_types: list) -> str:
 - **Risky Namespaces**: {', '.join(dashboard.risky_namespaces[:5]) if dashboard.risky_namespaces else 'None'}
 
 ### Top Findings:
-""" + "\n".join([f"- [{f.severity.upper()}] {f.title}" for f in dashboard.top_findings[:5]]))
+"""
+                        + "\n".join([f"- [{f.severity.upper()}] {f.title}" for f in dashboard.top_findings[:5]])
+                    )
                 except Exception as e:
                     logger.warning(f"Could not fetch security dashboard: {e}")
 
             if "rbac" in query_types:
                 try:
                     rbac = await security_service.analyze_rbac()
-                    context_parts.append(f"""
+                    context_parts.append(
+                        f"""
 ## RBAC Analysis
 - **Total Service Accounts**: {rbac.total_service_accounts}
 - **Risky Service Accounts**: {rbac.risky_service_accounts}
@@ -258,20 +287,24 @@ async def fetch_context(query_types: list) -> str:
 - **Wildcard Permissions**: {rbac.wildcard_permissions}
 
 ### Recommendations:
-""" + "\n".join([f"- {r}" for r in rbac.recommendations[:3]]))
+"""
+                        + "\n".join([f"- {r}" for r in rbac.recommendations[:3]])
+                    )
                 except Exception as e:
                     logger.warning(f"Could not fetch RBAC analysis: {e}")
 
             if "network_policy" in query_types:
                 try:
                     np = await security_service.analyze_network_policies()
-                    context_parts.append(f"""
+                    context_parts.append(
+                        f"""
 ## Network Policy Coverage
 - **Coverage**: {np.coverage_percentage:.1f}%
 - **Protected Namespaces**: {np.protected_namespaces}/{np.total_namespaces}
 - **Unprotected Namespaces**: {np.unprotected_namespaces}
 - **Pods Covered**: {np.covered_pods}/{np.total_pods}
-""")
+"""
+                    )
                 except Exception as e:
                     logger.warning(f"Could not fetch network policies: {e}")
 
@@ -287,7 +320,8 @@ async def fetch_context(query_types: list) -> str:
             failed_jobs = [j for j in jobs if j.last_build_status == "FAILURE"]
             running_jobs = [j for j in jobs if j.last_build_status == "BUILDING"]
 
-            context_parts.append(f"""
+            context_parts.append(
+                f"""
 ## Jenkins CI/CD
 - **Status**: {"Connected" if health.connected else "Disconnected"}
 - **Total Jobs**: {len(jobs)}
@@ -296,7 +330,13 @@ async def fetch_context(query_types: list) -> str:
 - **Queue Length**: {health.queue_length}
 
 ### Recent Failed Jobs:
-""" + ("\n".join([f"- **{j.name}**: Build #{j.last_build_number}" for j in failed_jobs[:5]]) if failed_jobs else "No failed jobs!"))
+"""
+                + (
+                    "\n".join([f"- **{j.name}**: Build #{j.last_build_number}" for j in failed_jobs[:5]])
+                    if failed_jobs
+                    else "No failed jobs!"
+                )
+            )
         except Exception as e:
             logger.warning(f"Could not fetch Jenkins data: {e}")
 
@@ -307,15 +347,19 @@ async def fetch_context(query_types: list) -> str:
             deployed = [r for r in releases if r.status == "deployed"]
             failed = [r for r in releases if r.status == "failed"]
 
-            context_parts.append(f"""
+            context_parts.append(
+                f"""
 ## Helm Releases
 - **Total Releases**: {len(releases)}
 - **Deployed**: {len(deployed)}
 - **Failed**: {len(failed)}
 
 ### Recent Releases:
-""" + "\n".join([f"- **{r.name}** ({r.namespace}): {r.chart} v{r.app_version} - {r.status}"
-                 for r in releases[:10]]))
+"""
+                + "\n".join(
+                    [f"- **{r.name}** ({r.namespace}): {r.chart} v{r.app_version} - {r.status}" for r in releases[:10]]
+                )
+            )
         except Exception as e:
             logger.warning(f"Could not fetch Helm data: {e}")
 
@@ -325,7 +369,8 @@ async def fetch_context(query_types: list) -> str:
             dashboard = await cost_service.get_cost_dashboard()
             recommendations = await cost_service.get_recommendations()
 
-            context_parts.append(f"""
+            context_parts.append(
+                f"""
 ## Cost Analysis
 - **Total Daily Cost**: ${dashboard.total_daily_cost:.2f}
 - **Total Monthly Cost**: ${dashboard.total_monthly_cost:.2f}
@@ -334,13 +379,16 @@ async def fetch_context(query_types: list) -> str:
 - **Storage Cost**: ${dashboard.storage_cost:.2f}/day
 
 ### Cost by Namespace (Top 5):
-""" + "\n".join([f"- **{ns.namespace}**: ${ns.daily_cost:.2f}/day"
-                 for ns in dashboard.namespace_costs[:5]])
-+ f"""
+"""
+                + "\n".join([f"- **{ns.namespace}**: ${ns.daily_cost:.2f}/day" for ns in dashboard.namespace_costs[:5]])
+                + f"""
 
 ### Savings Recommendations:
-""" + "\n".join([f"- [{r.priority}] {r.title}: Save ${r.potential_savings:.2f}/month"
-                 for r in recommendations[:3]]))
+"""
+                + "\n".join(
+                    [f"- [{r.priority}] {r.title}: Save ${r.potential_savings:.2f}/month" for r in recommendations[:3]]
+                )
+            )
         except Exception as e:
             logger.warning(f"Could not fetch cost data: {e}")
 
@@ -350,7 +398,8 @@ async def fetch_context(query_types: list) -> str:
             stats = await timeline_service.get_timeline_stats(hours=24)
             events = await timeline_service.get_events()
 
-            context_parts.append(f"""
+            context_parts.append(
+                f"""
 ## Recent Activity (Last 24 Hours)
 - **Total Events**: {stats.get('total_events', 0)}
 - **Deployments**: {stats.get('deployments', 0)}
@@ -358,7 +407,9 @@ async def fetch_context(query_types: list) -> str:
 - **Kubernetes Events**: {stats.get('k8s_events', 0)}
 
 ### Latest Events:
-""" + "\n".join([f"- [{e.event_type}] {e.title}" for e in events[:5]]))
+"""
+                + "\n".join([f"- [{e.event_type}] {e.title}" for e in events[:5]])
+            )
         except Exception as e:
             logger.warning(f"Could not fetch timeline data: {e}")
 
@@ -421,23 +472,14 @@ async def chat(request: ChatRequest):
 
         response = model.generate_content(full_prompt)
 
-        return ChatResponse(
-            response=response.text,
-            success=True
-        )
+        return ChatResponse(response=response.text, success=True)
 
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail="AI service not configured. Please set GEMINI_API_KEY."
-        )
+        raise HTTPException(status_code=503, detail="AI service not configured. Please set GEMINI_API_KEY.")
     except Exception as e:
         logger.error(f"AI chat error: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI service error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
 
 @router.get("/health")
@@ -468,10 +510,6 @@ async def ai_health():
         except Exception:
             services_status["helm"] = "disconnected"
 
-        return {
-            "status": "available",
-            "model": settings.GEMINI_MODEL,
-            "services": services_status
-        }
+        return {"status": "available", "model": settings.GEMINI_MODEL, "services": services_status}
     except Exception as e:
         return {"status": "error", "reason": str(e)}

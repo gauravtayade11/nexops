@@ -189,52 +189,62 @@ export default function KubernetesResourcesView() {
 
       if (activeCategory === 'workloads') {
         switch (activeWorkloadTab) {
-          case 'deployments':
+          case 'deployments': {
             const depRes = await kubernetesApi.getDeployments(ns);
             setDeployments(depRes.data);
             break;
-          case 'pods':
+          }
+          case 'pods': {
             const podRes = await kubernetesApi.getPods(ns);
             setPods(podRes.data);
             break;
-          case 'statefulsets':
+          }
+          case 'statefulsets': {
             const ssRes = await kubernetesApi.getStatefulSets(ns);
             setStatefulSets(ssRes.data);
             break;
-          case 'daemonsets':
+          }
+          case 'daemonsets': {
             const dsRes = await kubernetesApi.getDaemonSets(ns);
             setDaemonSets(dsRes.data);
             break;
-          case 'jobs':
+          }
+          case 'jobs': {
             const jobRes = await kubernetesApi.getJobs(ns);
             setJobs(jobRes.data);
             break;
-          case 'cronjobs':
+          }
+          case 'cronjobs': {
             const cjRes = await kubernetesApi.getCronJobs(ns);
             setCronJobs(cjRes.data);
             break;
+          }
         }
       } else if (activeCategory === 'networking') {
         switch (activeNetworkTab) {
-          case 'services':
+          case 'services': {
             const svcRes = await kubernetesApi.getServices(ns);
             setServices(svcRes.data);
             break;
-          case 'ingresses':
+          }
+          case 'ingresses': {
             const ingRes = await kubernetesApi.getIngresses(ns);
             setIngresses(ingRes.data);
             break;
+          }
         }
       } else if (activeCategory === 'config') {
         switch (activeConfigTab) {
-          case 'configmaps':
+          case 'configmaps': {
             const cmRes = await kubernetesApi.getConfigMaps(ns);
             setConfigMaps(cmRes.data);
             break;
-          case 'secrets':
+          }
+          case 'secrets': {
             const secRes = await kubernetesApi.getSecrets(ns);
             setSecrets(secRes.data);
             break;
+          }
         }
       } else if (activeCategory === 'storage') {
         const pvcRes = await kubernetesApi.getPVCs(ns);
