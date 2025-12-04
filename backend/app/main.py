@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
+    ai,
     auth,
     clusters,
     cost,
@@ -60,6 +61,7 @@ app.include_router(auth.router, prefix=f"{settings.API_PREFIX}/auth", tags=["Aut
 app.include_router(helm.router, prefix=f"{settings.API_PREFIX}", tags=["Helm"])
 app.include_router(cost.router, prefix=f"{settings.API_PREFIX}", tags=["Cost"])
 app.include_router(security.router, prefix=f"{settings.API_PREFIX}", tags=["Security"])
+app.include_router(ai.router, prefix=f"{settings.API_PREFIX}", tags=["AI"])
 
 
 @app.get("/")

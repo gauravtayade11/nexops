@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars globally while keeping scroll functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Optional: Show thin scrollbars on hover for better UX */
+.show-scrollbar-on-hover:hover {
+  scrollbar-width: thin;
+}
+
+.show-scrollbar-on-hover:hover::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+  height: 6px;
+}
+
+.show-scrollbar-on-hover:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.show-scrollbar-on-hover:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.show-scrollbar-on-hover:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

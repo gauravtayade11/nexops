@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Toast Notifications** - Visual feedback for user actions
+  - Success/error/warning/info toast types
+  - Auto-dismiss with configurable duration
+  - Integrated with Scale, Restart, and Delete actions
+- **Quick Status Filters** - Filter resources by status
+  - Deployments: All / Healthy / Degraded
+  - Pods: All / Running / Pending / Failed
+- **Column Sorting** - Click-to-sort table headers
+  - Sortable columns: Name, Namespace, Status, Age, Node, Restarts
+  - Visual sort direction indicators
+- **View YAML Modal** - Inspect resource YAML definitions
+  - Fetches live YAML from cluster via kubectl
+  - Copy-to-clipboard functionality
+  - Available for Deployments and Pods
+
+### Improved
+- **Modern Glass-morphism UI** - Enhanced visual design
+  - Gradient backgrounds and blur effects
+  - Smooth animations with Framer Motion
+  - Consistent dark mode support
+
 ## [1.3.0] - 2024-12-03
 
 ### Added

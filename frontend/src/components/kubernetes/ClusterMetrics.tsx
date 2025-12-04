@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   CpuChipIcon,
   CircleStackIcon,
@@ -21,29 +22,51 @@ import {
 } from 'recharts';
 import { kubernetesApi } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
+import GlassCard from '../common/GlassCard';
 import type { ClusterMetrics as ClusterMetricsType, PodMetrics, Namespace } from '../../types';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const tableRowVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: { delay: i * 0.03 },
+  }),
+};
 
 const COLORS = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
 function ProgressBar({ percent, color }: { percent: number; color: string }) {
-  const colorClasses: Record<string, string> = {
-    green: 'bg-success-500',
-    yellow: 'bg-warning-500',
-    red: 'bg-danger-500',
-    blue: 'bg-primary-500',
-  };
-
-  const getColor = () => {
-    if (percent >= 90) return colorClasses.red;
-    if (percent >= 70) return colorClasses.yellow;
-    return colorClasses[color] || colorClasses.green;
+  const getGradient = () => {
+    if (percent >= 90) return 'from-danger-400 to-danger-600';
+    if (percent >= 70) return 'from-warning-400 to-warning-600';
+    if (color === 'blue') return 'from-primary-400 to-primary-600';
+    return 'from-success-400 to-success-600';
   };
 
   return (
-    <div className="w-full bg-gray-200 dark:bg-slate-600 rounded-full h-2.5">
-      <div
-        className={`h-2.5 rounded-full transition-all duration-300 ${getColor()}`}
-        style={{ width: `${Math.min(percent, 100)}%` }}
+    <div className="w-full bg-gray-200/50 dark:bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min(percent, 100)}%` }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className={`h-2.5 rounded-full bg-gradient-to-r ${getGradient()} shadow-sm`}
       />
     </div>
   );
@@ -158,119 +181,156 @@ export default function ClusterMetrics() {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cluster Metrics</h1>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedNamespace}
-            onChange={(e) => setSelectedNamespace(e.target.value)}
-            className="px-3 py-2 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 rounded-lg text-sm"
-          >
-            <option value="">All Namespaces</option>
-            {namespaces.map((ns) => (
-              <option key={ns.name} value={ns.name}>
-                {ns.name}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-200 dark:to-white bg-clip-text text-transparent">
+            Cluster Metrics
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Real-time resource monitoring and analytics
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <select
+              value={selectedNamespace}
+              onChange={(e) => setSelectedNamespace(e.target.value)}
+              className="appearance-none pl-4 pr-10 py-2.5 border border-gray-200/50 dark:border-slate-600/50 rounded-xl text-sm bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-gray-900 dark:text-gray-100 shadow-sm hover:border-primary-300 dark:hover:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all cursor-pointer"
+            >
+              <option value="">All Namespaces</option>
+              {namespaces.map((ns) => (
+                <option key={ns.name} value={ns.name}>
+                  {ns.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-slate-600/50 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded"
+              className="rounded border-gray-300 dark:border-slate-500 text-primary-500 focus:ring-primary-500"
             />
             Auto-refresh
           </label>
-          <button onClick={fetchData} className="btn-secondary flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 transition-all duration-300 disabled:opacity-50"
+          >
             <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {error ? (
-        <div className="card bg-warning-50 dark:bg-yellow-900/20 border-warning-200 dark:border-yellow-800">
-          <p className="text-warning-700 dark:text-yellow-300">{error}</p>
-          <p className="text-sm text-warning-600 dark:text-yellow-400 mt-2">
-            Run: <code className="bg-warning-100 dark:bg-yellow-900/30 px-2 py-1 rounded">kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml</code>
-          </p>
-        </div>
+        <motion.div variants={itemVariants}>
+          <GlassCard className="bg-gradient-to-r from-warning-50/80 to-warning-100/50 dark:from-warning-500/10 dark:to-warning-600/5 border-warning-200/50 dark:border-warning-500/20">
+            <p className="text-warning-700 dark:text-warning-300 font-medium">{error}</p>
+            <p className="text-sm text-warning-600 dark:text-warning-400 mt-2">
+              Run: <code className="bg-warning-100/80 dark:bg-warning-900/30 px-2 py-1 rounded-lg font-mono text-xs">kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml</code>
+            </p>
+          </GlassCard>
+        </motion.div>
       ) : (
         <>
           {/* Cluster Overview */}
           {clusterMetrics && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* CPU Card */}
-              <div className="card">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <GlassCard variant="hover">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-600/10 ring-1 ring-primary-500/20">
                     <CpuChipIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">CPU Usage</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Cluster-wide</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Cluster-wide resource</p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Usage</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{clusterMetrics.total_cpu_usage} / {clusterMetrics.total_cpu_capacity}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100 font-mono">{clusterMetrics.total_cpu_usage} / {clusterMetrics.total_cpu_capacity}</span>
                   </div>
                   <ProgressBar percent={clusterMetrics.cpu_percent} color="blue" />
-                  <div className="text-right text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {clusterMetrics.cpu_percent}%
+                  <div className="text-right">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                      {clusterMetrics.cpu_percent}%
+                    </span>
                   </div>
                 </div>
-              </div>
+              </GlassCard>
 
               {/* Memory Card */}
-              <div className="card">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-success-100 dark:bg-green-900/30 rounded-lg">
-                    <CircleStackIcon className="h-6 w-6 text-success-600 dark:text-green-400" />
+              <GlassCard variant="hover">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-success-500/10 to-success-600/10 ring-1 ring-success-500/20">
+                    <CircleStackIcon className="h-6 w-6 text-success-600 dark:text-success-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">Memory Usage</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Cluster-wide</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Cluster-wide resource</p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Usage</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{clusterMetrics.total_memory_usage} / {clusterMetrics.total_memory_capacity}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100 font-mono">{clusterMetrics.total_memory_usage} / {clusterMetrics.total_memory_capacity}</span>
                   </div>
                   <ProgressBar percent={clusterMetrics.memory_percent} color="green" />
-                  <div className="text-right text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {clusterMetrics.memory_percent}%
+                  <div className="text-right">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-success-500 to-success-600 bg-clip-text text-transparent">
+                      {clusterMetrics.memory_percent}%
+                    </span>
                   </div>
                 </div>
-              </div>
-            </div>
+              </GlassCard>
+            </motion.div>
           )}
 
           {/* Charts Row */}
           {topPodsByCpu.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Pods by CPU Chart */}
-              <div className="card">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <ChartBarIcon className="h-5 w-5" />
-                  Top Pods by CPU (millicores)
-                </h2>
+              <GlassCard variant="hover">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-primary-500/10">
+                    <ChartBarIcon className="h-5 w-5 text-primary-500" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Top Pods by CPU (millicores)
+                  </h2>
+                </div>
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={topPodsByCpu} layout="vertical" margin={{ left: 20, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} opacity={0.5} />
                       <XAxis type="number" stroke={chartTheme.text} fontSize={12} />
                       <YAxis dataKey="name" type="category" width={120} stroke={chartTheme.text} fontSize={11} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: chartTheme.background,
-                          border: `1px solid ${chartTheme.grid}`,
-                          borderRadius: '8px',
+                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                          backdropFilter: 'blur(8px)',
                         }}
                         labelStyle={{ color: chartTheme.text }}
                         formatter={(value: number, name: string) => [
@@ -278,145 +338,186 @@ export default function ClusterMetrics() {
                           name === 'cpu' ? 'CPU' : 'Memory',
                         ]}
                       />
-                      <Bar dataKey="cpu" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="cpu" fill="url(#cpuGradient)" radius={[0, 6, 6, 0]} />
+                      <defs>
+                        <linearGradient id="cpuGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#0ea5e9" />
+                          <stop offset="100%" stopColor="#0284c7" />
+                        </linearGradient>
+                      </defs>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </GlassCard>
 
               {/* Top Pods by Memory Chart */}
-              <div className="card">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <ChartBarIcon className="h-5 w-5" />
-                  Top Pods by Memory (Mi)
-                </h2>
+              <GlassCard variant="hover">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-success-500/10">
+                    <ChartBarIcon className="h-5 w-5 text-success-500" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Top Pods by Memory (Mi)
+                  </h2>
+                </div>
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={topPodsByMemory} layout="vertical" margin={{ left: 20, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} opacity={0.5} />
                       <XAxis type="number" stroke={chartTheme.text} fontSize={12} />
                       <YAxis dataKey="name" type="category" width={120} stroke={chartTheme.text} fontSize={11} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: chartTheme.background,
-                          border: `1px solid ${chartTheme.grid}`,
-                          borderRadius: '8px',
+                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                          backdropFilter: 'blur(8px)',
                         }}
                         labelStyle={{ color: chartTheme.text }}
                         formatter={(value: number) => [`${Math.round(value)} Mi`, 'Memory']}
                       />
-                      <Bar dataKey="memory" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="memory" fill="url(#memGradient)" radius={[0, 6, 6, 0]} />
+                      <defs>
+                        <linearGradient id="memGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#22c55e" />
+                          <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                      </defs>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
-            </div>
+              </GlassCard>
+            </motion.div>
           )}
 
           {/* Namespace Distribution */}
           {pieData.length > 0 && (
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Resource Distribution by Namespace (CPU)
-              </h2>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {pieData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: chartTheme.background,
-                        border: `1px solid ${chartTheme.grid}`,
-                        borderRadius: '8px',
-                      }}
-                      formatter={(value: number, _name: string, entry) => {
-                        const data = entry.payload;
-                        return [
-                          <div key="tooltip" className="space-y-1">
-                            <div>CPU: {value}m</div>
-                            <div>Memory: {Math.round(data.memory)} Mi</div>
-                            <div>Pods: {data.pods}</div>
-                          </div>,
-                          data.name,
-                        ];
-                      }}
-                    />
-                    <Legend
-                      wrapperStyle={{ color: chartTheme.text }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <motion.div variants={itemVariants}>
+              <GlassCard variant="hover">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
+                  Resource Distribution by Namespace (CPU)
+                </h2>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {pieData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                          backdropFilter: 'blur(8px)',
+                        }}
+                        formatter={(value: number, _name: string, entry) => {
+                          const data = entry.payload;
+                          return [
+                            <div key="tooltip" className="space-y-1">
+                              <div>CPU: {value}m</div>
+                              <div>Memory: {Math.round(data.memory)} Mi</div>
+                              <div>Pods: {data.pods}</div>
+                            </div>,
+                            data.name,
+                          ];
+                        }}
+                      />
+                      <Legend wrapperStyle={{ color: chartTheme.text }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </GlassCard>
+            </motion.div>
           )}
 
           {/* Node Metrics */}
           {clusterMetrics?.nodes && clusterMetrics.nodes.length > 0 && (
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <ServerStackIcon className="h-5 w-5" />
-                Node Resource Usage
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-slate-700">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Node</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">CPU Usage</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 w-32">CPU %</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Memory Usage</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 w-32">Memory %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clusterMetrics.nodes.map((node) => (
-                      <tr key={node.name} className="border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
-                        <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">{node.name}</td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{node.cpu_usage}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <ProgressBar percent={node.cpu_percent} color="blue" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400 w-12">{node.cpu_percent}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{node.memory_usage}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <ProgressBar percent={node.memory_percent} color="green" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400 w-12">{node.memory_percent}%</span>
-                          </div>
-                        </td>
+            <motion.div variants={itemVariants}>
+              <GlassCard variant="hover">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-gray-500/10">
+                    <ServerStackIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Node Resource Usage
+                  </h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-slate-700">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Node</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">CPU Usage</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 w-40">CPU %</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Memory Usage</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 w-40">Memory %</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </thead>
+                    <tbody>
+                      {clusterMetrics.nodes.map((node, index) => (
+                        <motion.tr
+                          key={node.name}
+                          custom={index}
+                          variants={tableRowVariants}
+                          initial="hidden"
+                          animate="visible"
+                          className="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50/50 dark:hover:bg-slate-700/30 transition-colors"
+                        >
+                          <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">{node.name}</td>
+                          <td className="py-3 px-4 text-gray-500 dark:text-gray-400 font-mono text-sm">{node.cpu_usage}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <ProgressBar percent={node.cpu_percent} color="blue" />
+                              </div>
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 w-12 text-right">{node.cpu_percent}%</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-500 dark:text-gray-400 font-mono text-sm">{node.memory_usage}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <ProgressBar percent={node.memory_percent} color="green" />
+                              </div>
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 w-12 text-right">{node.memory_percent}%</span>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </GlassCard>
+            </motion.div>
           )}
 
           {/* Empty state */}
           {!loading && !clusterMetrics && podMetrics.length === 0 && (
-            <div className="card text-center py-12">
-              <CpuChipIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Metrics Available</h3>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">Metrics server may not be installed or accessible.</p>
-            </div>
+            <motion.div variants={itemVariants}>
+              <GlassCard className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                  <CpuChipIcon className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Metrics Available</h3>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">Metrics server may not be installed or accessible.</p>
+              </GlassCard>
+            </motion.div>
           )}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
