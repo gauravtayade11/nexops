@@ -69,8 +69,10 @@ async def get_service(namespace: str, service_name: str):
                     allowed_actions=[ActionType.DEPLOY, ActionType.ROLLBACK, ActionType.SCALE, ActionType.RESTART],
                     health_status="healthy" if dep.ready_replicas == dep.replicas else "degraded",
                 )
-    except Exception:
-        pass
+    except Exception as e:
+        # Log the error but don't expose details to client
+        import logging
+        logging.getLogger(__name__).warning(f"Error fetching service {service_name}: {type(e).__name__}")
 
     raise HTTPException(status_code=404, detail="Service not found")
 
