@@ -23,27 +23,26 @@
 
 **A modern, comprehensive Kubernetes management dashboard for DevOps teams.**
 
-[Features](#features) • [Demo](#demo) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Helm](#helm-installation) • [Contributing](#contributing)
+[Features](#features) • [Screenshots](#screenshots) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Helm](#helm-installation) • [Contributing](#contributing)
 
 ---
 
 </div>
 
-## Demo
+## Screenshots
 
 <div align="center">
 
-<!-- Replace with your actual demo GIF/video -->
-![NexOps Dashboard Demo](docs/images/demo.gif)
+### Dashboard Overview
+![NexOps Dashboard](docs/images/HomePage.png)
 
-*Security Posture Dashboard with AI-powered remediation*
+### Kubernetes Resources
+![Kubernetes Resources](docs/images/Kuberntes.png)
+
+### Security Posture Dashboard
+![Security Dashboard](docs/images/Security.png)
 
 </div>
-
-> **Note:** To add your own demo:
-> 1. Record your screen using tools like [LICEcap](https://www.cockos.com/licecap/) or [Kap](https://getkap.co/)
-> 2. Save as `docs/images/demo.gif`
-> 3. Recommended: Keep under 5MB, 800x600px, 15-30 seconds
 
 ## Overview
 
@@ -73,7 +72,12 @@ NexOps is a powerful DevOps Operations Center that provides real-time visibility
 - **kubectl Terminal** - Execute kubectl commands directly in the browser
 - **Shell Terminal** - Full bash access with kubectl and helm pre-installed
 - **Terminal State Persistence** - Command history and output preserved across navigation
-- **Pod Exec** - Run commands inside containers
+- **Pod Exec** - Interactive PTY-based terminal sessions inside containers
+  - Full xterm.js terminal with resize support
+  - WebSocket-based real-time communication
+- **Debug Containers** - Debug distroless/minimal containers without a shell
+  - Ephemeral container support via kubectl debug
+  - Multiple debug images (busybox, alpine, netshoot)
 - **Log Viewer** - Real-time streaming with WebSocket support, search filters, and download
 - **Pod Events** - View Kubernetes events for pending/failed pods directly in log viewer
 
@@ -246,6 +250,13 @@ NexOps/
 | `/api/v1/kubernetes/pods/{ns}/{pod}/events` | GET | Get pod events |
 | `/api/v1/kubernetes/pods/{ns}/{pod}/exec` | POST | Execute in container |
 
+#### WebSocket Endpoints
+| Endpoint | Protocol | Description |
+|----------|----------|-------------|
+| `/api/v1/ws/pods/{ns}/{pod}/logs` | WS | Real-time log streaming |
+| `/api/v1/ws/pods/{ns}/{pod}/exec` | WS | Interactive terminal session |
+| `/api/v1/ws/pods/{ns}/{pod}/debug` | WS | Debug container session |
+
 ### Kubernetes Deployment
 
 ```bash
@@ -299,10 +310,18 @@ See [charts/nexops/values.yaml](charts/nexops/values.yaml) for all options.
 
 ## Security
 
+### Application Security
 - **Shell Protection** - Dangerous commands are blocked (rm -rf /, sudo, etc.)
 - **kubectl Guard** - Destructive operations require confirmation
 - **Secret Masking** - Only key names displayed, not values
 - **RBAC Ready** - Granular Kubernetes permissions
+
+### CI/CD Security Scanning
+- **CodeQL Analysis** - Static code analysis for JavaScript and Python
+- **Trivy Docker Scan** - Container vulnerability scanning for CRITICAL/HIGH CVEs
+- **Dependency Review** - License compliance and vulnerability checks on PRs
+- **Secret Detection** - Gitleaks integration for credential leak prevention
+- **OSSF Scorecard** - Open Source Security Foundation best practices
 
 ## Tech Stack
 

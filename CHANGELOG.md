@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-12-04
+
 ### Added
+- **Interactive Pod Exec Terminal** - Full PTY-based terminal sessions
+  - xterm.js integration with resize support
+  - WebSocket-based real-time communication
+  - Input validation for security (RFC 1123 names)
+- **Debug Containers** - Debug distroless/minimal containers
+  - Ephemeral container support via kubectl debug
+  - Multiple debug images (busybox, alpine, netshoot, ubuntu)
+  - Target container process namespace sharing
 - **Toast Notifications** - Visual feedback for user actions
   - Success/error/warning/info toast types
   - Auto-dismiss with configurable duration
@@ -22,16 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fetches live YAML from cluster via kubectl
   - Copy-to-clipboard functionality
   - Available for Deployments and Pods
-
-### Improved
-- **Modern Glass-morphism UI** - Enhanced visual design
-  - Gradient backgrounds and blur effects
-  - Smooth animations with Framer Motion
-  - Consistent dark mode support
-
-## [1.3.0] - 2024-12-03
-
-### Added
 - **Security Posture Dashboard** - Comprehensive security monitoring and analysis
   - **Security Score & Grade** - Overall cluster security assessment with letter grade (A-F)
   - **Security Findings** - Real-time detection of misconfigurations and vulnerabilities
@@ -61,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Modern AI-themed UI with gradient styling
 
 ### Improved
+- **Modern Glass-morphism UI** - Enhanced visual design
+  - Gradient backgrounds and blur effects
+  - Smooth animations with Framer Motion
+  - Consistent dark mode support
 - **Modal UX Enhancement** - AI responses now appear inline within detail modals
   - Single modal experience instead of separate popup
   - Seamless loading states with animated gradients
@@ -69,6 +73,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Violet/Cyan gradient theme
   - Syntax-highlighted code blocks with copy functionality
   - Responsive markdown rendering
+
+### Security
+- **CodeQL Fixes** - Resolved security scanning issues
+  - Input validation for Kubernetes resource names (RFC 1123)
+  - Allowlist validation for shells and debug images
+  - Log injection prevention with input sanitization
+  - Secure logging with parameterized format strings
+
+### CI/CD
+- Removed redundant Trivy filesystem scan (Docker scan is sufficient)
+- Updated documentation with CI/CD security scanning info
 
 ## [1.2.0] - 2024-12-02
 
@@ -210,7 +225,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 1.3.0 | 2024-12-03 | Security Posture Dashboard with AI-Powered Remediation |
+| 1.3.0 | 2025-12-04 | Pod Exec Terminal, Debug Containers, Security Dashboard, Glass-morphism UI |
 | 1.2.0 | 2024-12-02 | Dark Mode, Terminal Persistence, Multi-Cluster, RBAC, Helm UI, Cost Dashboard |
 | 1.1.0 | 2024-12-01 | WebSocket Real-Time Log Streaming |
 | 1.0.0 | 2024-12-01 | Initial Release |

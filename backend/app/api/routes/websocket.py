@@ -5,11 +5,11 @@ import json
 import logging
 import os
 import pty
+import re
 import select
-import subprocess
 from typing import Optional
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from kubernetes.client.rest import ApiException
 
 from app.core.config import settings
@@ -18,6 +18,62 @@ from app.services.kubernetes_service import kubernetes_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Kubernetes resource name validation pattern (RFC 1123)
+K8S_NAME_PATTERN = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
+# Allowed shells for exec
+ALLOWED_SHELLS = {"/bin/sh", "/bin/bash", "/bin/ash", "/bin/zsh"}
+# Allowed debug images
+ALLOWED_DEBUG_IMAGES = {
+    "busybox:latest",
+    "alpine:latest",
+    "nicolaka/netshoot:latest",
+    "ubuntu:latest",
+}
+
+
+def sanitize_log_input(value: str, max_length: int = 63) -> str:
+    """Sanitize user input for safe logging (prevent log injection)."""
+    if not value:
+        return "<empty>"
+    # Remove newlines and control characters
+    sanitized = re.sub(r"[\r\n\t\x00-\x1f\x7f-\x9f]", "", value)
+    # Truncate to max length
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length] + "..."
+    return sanitized
+
+
+def validate_k8s_name(name: str, field_name: str) -> str:
+    """Validate Kubernetes resource name (RFC 1123 subdomain)."""
+    if not name or len(name) > 253:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}: must be 1-253 characters")
+    if not K8S_NAME_PATTERN.match(name):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {field_name}: must consist of lowercase alphanumeric characters, '-' or '.'"
+        )
+    return name
+
+
+def validate_shell(shell: str) -> str:
+    """Validate shell path is in allowed list."""
+    if shell not in ALLOWED_SHELLS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid shell: must be one of {ALLOWED_SHELLS}"
+        )
+    return shell
+
+
+def validate_debug_image(image: str) -> str:
+    """Validate debug image is in allowed list."""
+    if image not in ALLOWED_DEBUG_IMAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid debug image: must be one of {ALLOWED_DEBUG_IMAGES}"
+        )
+    return image
 
 
 @router.websocket("/pods/{namespace}/{pod_name}/logs")
@@ -87,14 +143,14 @@ async def websocket_pod_logs(
                 if data == "ping":
                     await websocket.send_json({"type": "pong"})
         except WebSocketDisconnect:
-            logger.info(f"Client disconnected: {connection_id}")
+            logger.info("Client disconnected: %s", sanitize_log_input(connection_id))
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected during setup")
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.info("WebSocket disconnected during setup")
+    except Exception:
+        logger.error("WebSocket error during log streaming")
         if connection_id:
-            await ws_manager.send_error(connection_id, str(e), 500)
+            await ws_manager.send_error(connection_id, "Internal server error", 500)
     finally:
         if connection_id:
             await ws_manager.disconnect(connection_id)
@@ -120,15 +176,15 @@ async def stream_logs(
             await ws_manager.send_log(connection_id, log_line)
 
     except asyncio.CancelledError:
-        logger.info(f"Log streaming cancelled for {connection_id}")
+        logger.info("Log streaming cancelled for %s", sanitize_log_input(connection_id))
     except ApiException as e:
         if e.status == 404:
-            await ws_manager.send_error(connection_id, f"Pod {pod_name} not found", 404)
+            await ws_manager.send_error(connection_id, "Pod not found", 404)
         else:
-            await ws_manager.send_error(connection_id, str(e), e.status or 500)
-    except Exception as e:
-        logger.error(f"Error streaming logs: {e}")
-        await ws_manager.send_error(connection_id, str(e), 500)
+            await ws_manager.send_error(connection_id, "Kubernetes API error", e.status or 500)
+    except Exception:
+        logger.error("Error streaming logs for %s", sanitize_log_input(connection_id))
+        await ws_manager.send_error(connection_id, "Internal server error", 500)
 
 
 @router.websocket("/health")
@@ -159,12 +215,29 @@ async def websocket_pod_exec(
     - Server sends: {"type": "status", "status": "connected|disconnected", "message": "..."}
     - Server sends: {"type": "error", "error": "...", "code": 500}
     """
+    # Validate inputs before accepting WebSocket
+    try:
+        namespace = validate_k8s_name(namespace, "namespace")
+        pod_name = validate_k8s_name(pod_name, "pod_name")
+        shell = validate_shell(shell)
+        if container:
+            container = validate_k8s_name(container, "container")
+    except HTTPException as e:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "error": e.detail, "code": 400})
+        await websocket.close()
+        return
+
     await websocket.accept()
     master_fd = None
     pid = None
 
+    # Sanitize for logging
+    safe_ns = sanitize_log_input(namespace)
+    safe_pod = sanitize_log_input(pod_name)
+
     try:
-        # Build kubectl exec command
+        # Build kubectl exec command with validated inputs
         kubectl_cmd = ["kubectl"]
         if settings.K8S_CONFIG_PATH:
             config_path = os.path.expanduser(settings.K8S_CONFIG_PATH)
@@ -175,7 +248,7 @@ async def websocket_pod_exec(
             kubectl_cmd.extend(["-c", container])
         kubectl_cmd.extend(["--", shell])
 
-        logger.info(f"Starting exec session: {' '.join(kubectl_cmd)}")
+        logger.info("Starting exec session for pod %s in namespace %s", safe_pod, safe_ns)
 
         # Create PTY and spawn kubectl exec
         pid, master_fd = pty.fork()
@@ -272,26 +345,26 @@ async def websocket_pod_exec(
                     pass
 
     except WebSocketDisconnect:
-        logger.info(f"Exec WebSocket disconnected: {namespace}/{pod_name}")
+        logger.info("Exec WebSocket disconnected for pod %s in namespace %s", safe_pod, safe_ns)
     except Exception as e:
-        logger.error(f"Exec WebSocket error: {e}")
+        logger.error("Exec WebSocket error: %s", type(e).__name__)
         try:
-            await websocket.send_json({"type": "error", "error": str(e), "code": 500})
+            await websocket.send_json({"type": "error", "error": "Internal server error", "code": 500})
         except Exception:
-            pass
+            pass  # WebSocket may already be closed, ignore send errors
     finally:
-        # Cleanup
+        # Cleanup PTY and child process
         if master_fd is not None:
             try:
                 os.close(master_fd)
             except Exception:
-                pass
+                pass  # File descriptor may already be closed
         if pid is not None and pid > 0:
             try:
                 os.kill(pid, 9)
                 os.waitpid(pid, 0)
             except Exception:
-                pass
+                pass  # Process may have already exited
         try:
             await websocket.send_json({
                 "type": "status",
@@ -299,8 +372,8 @@ async def websocket_pod_exec(
                 "message": "Session ended"
             })
         except Exception:
-            pass
-        logger.info(f"Exec session ended: {namespace}/{pod_name}")
+            pass  # WebSocket may already be closed
+        logger.info("Exec session ended for pod %s in namespace %s", safe_pod, safe_ns)
 
 
 @router.websocket("/pods/{namespace}/{pod_name}/debug")
@@ -329,12 +402,31 @@ async def websocket_pod_debug(
     - Server sends: {"type": "status", "status": "connected|disconnected", "message": "..."}
     - Server sends: {"type": "error", "error": "...", "code": 500}
     """
+    # Validate inputs before accepting WebSocket
+    try:
+        namespace = validate_k8s_name(namespace, "namespace")
+        pod_name = validate_k8s_name(pod_name, "pod_name")
+        image = validate_debug_image(image)
+        if container:
+            container = validate_k8s_name(container, "container")
+        if target_container:
+            target_container = validate_k8s_name(target_container, "target_container")
+    except HTTPException as e:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "error": e.detail, "code": 400})
+        await websocket.close()
+        return
+
     await websocket.accept()
     master_fd = None
     pid = None
 
+    # Sanitize for logging
+    safe_ns = sanitize_log_input(namespace)
+    safe_pod = sanitize_log_input(pod_name)
+
     try:
-        # Build kubectl debug command
+        # Build kubectl debug command with validated inputs
         kubectl_cmd = ["kubectl"]
         if settings.K8S_CONFIG_PATH:
             config_path = os.path.expanduser(settings.K8S_CONFIG_PATH)
@@ -353,7 +445,7 @@ async def websocket_pod_debug(
         # Add shell command
         kubectl_cmd.extend(["--", "/bin/sh"])
 
-        logger.info(f"Starting debug session: {' '.join(kubectl_cmd)}")
+        logger.info("Starting debug session for pod %s in namespace %s", safe_pod, safe_ns)
 
         # Create PTY and spawn kubectl debug
         pid, master_fd = pty.fork()
@@ -421,8 +513,8 @@ async def websocket_pod_debug(
 
                     except WebSocketDisconnect:
                         break
-                    except Exception as e:
-                        logger.error(f"Error reading from WebSocket: {e}")
+                    except Exception:
+                        logger.error("Error reading from WebSocket in debug session")
                         break
 
             # Run both tasks concurrently
@@ -442,25 +534,26 @@ async def websocket_pod_debug(
                     pass
 
     except WebSocketDisconnect:
-        logger.info(f"Debug WebSocket disconnected: {namespace}/{pod_name}")
-    except Exception as e:
-        logger.error(f"Debug WebSocket error: {e}")
+        logger.info("Debug WebSocket disconnected for pod %s in namespace %s", safe_pod, safe_ns)
+    except Exception:
+        logger.error("Debug WebSocket error for pod %s in namespace %s", safe_pod, safe_ns)
         try:
-            await websocket.send_json({"type": "error", "error": str(e), "code": 500})
+            await websocket.send_json({"type": "error", "error": "Internal server error", "code": 500})
         except Exception:
-            pass
+            pass  # WebSocket may already be closed, ignore send errors
     finally:
+        # Cleanup PTY and child process
         if master_fd is not None:
             try:
                 os.close(master_fd)
             except Exception:
-                pass
+                pass  # File descriptor may already be closed
         if pid is not None and pid > 0:
             try:
                 os.kill(pid, 9)
                 os.waitpid(pid, 0)
             except Exception:
-                pass
+                pass  # Process may have already exited
         try:
             await websocket.send_json({
                 "type": "status",
@@ -468,5 +561,5 @@ async def websocket_pod_debug(
                 "message": "Debug session ended"
             })
         except Exception:
-            pass
-        logger.info(f"Debug session ended: {namespace}/{pod_name}")
+            pass  # WebSocket may already be closed
+        logger.info("Debug session ended for pod %s in namespace %s", safe_pod, safe_ns)

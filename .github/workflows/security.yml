@@ -43,35 +43,10 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
 
-  # Trivy Vulnerability Scanner (Free)
-  trivy-fs:
-    name: Trivy Filesystem Scan
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner (filesystem)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-fs-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-fs-results.sarif'
-
-  # Trivy Docker Image Scan
+  # Trivy Docker Image Vulnerability Scanner
   trivy-docker:
     name: Trivy Docker Image Scan
     runs-on: ubuntu-latest
-    needs: [trivy-fs]
 
     steps:
       - name: Checkout code
