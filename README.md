@@ -321,7 +321,6 @@ See [charts/nexops/values.yaml](charts/nexops/values.yaml) for all options.
 - **Trivy Docker Scan** - Container vulnerability scanning for CRITICAL/HIGH CVEs
 - **Dependency Review** - License compliance and vulnerability checks on PRs
 - **Secret Detection** - Gitleaks integration for credential leak prevention
-- **OSSF Scorecard** - Open Source Security Foundation best practices
 
 ## Tech Stack
 
